@@ -19,13 +19,14 @@ books['Date Added'] = pd.to_datetime(books['Date Added'])
 
 # Enter null in My Rating column instead of 0 to avoid giving incorrect information
 books['My Rating'].replace(0, 'null', inplace= True)
+books['My Rating'] = books['My Rating'].replace('null', np.nan).astype('Int64')
 
 # Filter the read books only (there may be to-read books still unread)
 books = books[books['Read Count'] == 1]
 
 # region My Yearly Reading Journey
 # Extract the year from date
-books['Year Read'] = books['Date Read'].dt.year
+books['Year Read'] = books['Date Read'].dt.year.astype('Int64')
 
 # I need this filter because of no regular data before 2019
 yearly_books = books[books['Year Read'] > 2018].groupby('Year Read')['Book Id'].count().reset_index(name= 'Counts')
@@ -62,48 +63,81 @@ plt.show();
 my_ratings = books.groupby('My Rating')['My Rating'].count().reset_index(name= 'Counts')
 
 # Visualizing distribution of my rating
+# Filter rated ones only for better visualization
+books_with_rating = books.dropna(subset=['My Rating'])
+
 # Set the theme and size of the plot
 plt.figure(figsize=(6,6))
 sns.set_theme(style= 'darkgrid', palette='Set2')
 
 # Create the plot, change the title
-sns.barplot(data= my_ratings, x= 'My Rating', y= 'Counts')
-plt.title('Number of My Ratings', fontsize= 16)
+sns.histplot(data= books_with_rating, x= 'My Rating', discrete= True)
+plt.title('Distribution of My Ratings', fontsize= 16)
 
 # Change labels and their settings
 plt.xlabel('My Ratings', fontsize= 12)
-plt.xticks(fontsize= 12)
+plt.xticks([2, 3, 4, 5], fontsize= 12)
+
 plt.ylabel('Counts', fontsize= 12)
 plt.yticks(fontsize= 12)
+
+# Add mean and median for rating
+mean_value = np.nanmean(books_with_rating['My Rating'])
+median_value = np.median(books_with_rating['My Rating'])
+plt.axvline(x= mean_value, color='red', linestyle='--', label=f'Mean: {mean_value:.2f}')
+plt.axvline(x= median_value, color='blue', linestyle='-', label=f'Median: {median_value:.2f}')
+plt.legend()
 
 # Show the plot
 plt.show();
 # endregion
 
+# region My 5 Favorite and 5 Least Favorite Books
+# Sort and filter the max-rated books
+fav_5_books = books_with_rating.sort_values(['My Rating', 'Average Rating'], ascending= [False, False]).loc[:, ['Title', 'Author', 'My Rating', 'Average Rating', 'Number of Pages']].head(5)
+
+# Sort and filter the min-rated books
+least_5_books = books_with_rating.sort_values(['My Rating', 'Average Rating'], ascending= [True, True]).loc[:, ['Title', 'Author', 'My Rating', 'Average Rating', 'Number of Pages']].head(5)
+
+# Display them
+print(fav_5_books)
+print(least_5_books)
+# endregion
+
 # region Do My Ratings Align with the Crowd?
-# Filter books have rating and fix data type
-books_w_rating = books[books['My Rating'] != 'null'][['My Rating', 'Average Rating']].astype(float)
+# Calculate difference between my ratings and Goodreads' average ratings
+books['Diff Average Rating'] = books['My Rating'] - books['Average Rating']
 
-# Round the average ratings to interpret better
-books_w_rating['Rounded Average Rating'] = np.round(books_w_rating['Average Rating'] * 2) / 2
+# Count underrated/overrated books
+overrated = books[books['Diff Average Rating'] >= 0]['Book Id'].count()
+underrated = books[books['Diff Average Rating'] < 0]['Book Id'].count()
 
-# Count the occurrences of each My Rating-Avg Rating combination
-unstacked_books_w_rating = books_w_rating.groupby(['My Rating', 'Rounded Average Rating']).size().unstack(fill_value= 0)
-
-# Visualizing my rating vs. average ratings with a heatmap
+# Visualizing my rating vs. average ratings
 # Set the theme and size of the plot
 plt.figure(figsize=(8,6))
 sns.set_theme(style= 'darkgrid', palette='Set2')
 
 # Create the plot, change the title
-sns.heatmap(data = unstacked_books_w_rating, cmap= 'flare', annot= True, fmt= 'd', cbar= False)
-plt.title('How My Ratings Compare to Goodreads Avg. Ratings', fontsize= 14)
+sns.scatterplot(data= books_with_rating, x= 'My Rating', y= 'Average Rating')
+plt.title('Do I Overrate or Underrate?', fontsize= 14)
 
 # Change labels and their settings
-plt.xlabel('Goodreads Average Ratings', fontsize= 12, labelpad=20)
-plt.xticks(fontsize= 12)
-plt.ylabel('My Rating', fontsize= 12, labelpad=20)
+plt.xlabel('My Ratings', fontsize= 12)
+plt.xticks([2.0, 3.0, 4.0, 5.0], fontsize= 12)
+plt.ylabel('Goodreads Average Ratings', fontsize= 12)
 plt.yticks(fontsize= 12)
+
+# Add y = x reference line
+plt.plot([min(books_with_rating['My Rating']), max(books_with_rating['My Rating'])], 
+         [min(books_with_rating['My Rating']), max(books_with_rating['My Rating'])], 
+         color='red', linestyle='-')
+
+# Add a text annotation explaining underrated/overrated
+plt.text(x= 4.45, y= 2.45, s= f"Overrated Zone: I overrated {overrated} books\n compared to Goodreads' average.", fontsize= 10, ha= 'center',
+        bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.5'))
+
+plt.text(x= 2.6, y= 4.67, s= f"Underrated Zone: I underrated {underrated}\n books compared to Goodreads' average.", fontsize= 10, ha= 'center',
+        bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.5'))
 
 # Show the plot
 plt.show();
