@@ -118,14 +118,14 @@ plt.figure(figsize=(8,6))
 sns.set_theme(style= 'darkgrid', palette='Set2')
 
 # Create the plot, change the title
-sns.scatterplot(data= books_with_rating, x= 'My Rating', y= 'Average Rating')
+sns.scatterplot(data= books_with_rating, x= 'Average Rating', y= 'My Rating')
 plt.title('Do I Overrate or Underrate?', fontsize= 14)
 
 # Change labels and their settings
-plt.xlabel('My Ratings', fontsize= 12)
-plt.xticks([2.0, 3.0, 4.0, 5.0], fontsize= 12)
-plt.ylabel('Goodreads Average Ratings', fontsize= 12)
-plt.yticks(fontsize= 12)
+plt.xlabel('Goodreads Average Ratings', fontsize= 12)
+plt.xticks(fontsize= 12)
+plt.ylabel('My Ratings', fontsize= 12)
+plt.yticks([2.0, 3.0, 4.0, 5.0], fontsize= 12)
 
 # Add y = x reference line
 plt.plot([min(books_with_rating['My Rating']), max(books_with_rating['My Rating'])], 
@@ -133,10 +133,10 @@ plt.plot([min(books_with_rating['My Rating']), max(books_with_rating['My Rating'
          color='red', linestyle='-')
 
 # Add a text annotation explaining underrated/overrated
-plt.text(x= 4.45, y= 2.45, s= f"Overrated Zone: I overrated {overrated} books\n compared to Goodreads' average.", fontsize= 10, ha= 'center',
+plt.text(x= 2.6, y= 4.67, s= f"Overrated Zone: I overrated {overrated} books\n compared to Goodreads' average.", fontsize= 10, ha= 'center',
         bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.5'))
 
-plt.text(x= 2.6, y= 4.67, s= f"Underrated Zone: I underrated {underrated}\n books compared to Goodreads' average.", fontsize= 10, ha= 'center',
+plt.text(x= 4.4, y= 2.45, s= f"Underrated Zone: I underrated {underrated}\n books compared to Goodreads' average.", fontsize= 10, ha= 'center',
         bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.5'))
 
 # Show the plot
